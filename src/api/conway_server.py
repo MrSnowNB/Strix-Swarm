@@ -31,38 +31,17 @@ async def root():
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    """WebSocket endpoint for Conway grid updates"""
     await websocket.accept()
     await runner.add_client(websocket)
-
+    
     try:
         while True:
             data = await websocket.receive_text()
-
-            # Try to parse as JSON first (new commands), fall back to strings
-            try:
-                command_data = json.loads(data)
-                response = await runner.handle_command(command_data)
-
-                # Send response if any
-                if response:
-                    await websocket.send_text(response)
-
-            except json.JSONDecodeError:
-                # Handle legacy string commands
-                if data == "reset":
-                    runner.grid.grid.fill(0)
-                    runner.grid.seed_glider(r_offset=1, c_offset=1)
-                    await runner.send_full_state(websocket)
-                elif data == "stop":
-                    runner.stop()
-                elif data == "start":
-                    if not runner.running:
-                        runner.running = True
-                        asyncio.create_task(runner.run_loop())
-                else:
-                    logger.warning(f"Unknown command: {data}")
-
+            message = json.loads(data)
+            
+            # Handle commands
+            await runner.handle_command(websocket, message)
+            
     except WebSocketDisconnect:
         runner.remove_client(websocket)
 

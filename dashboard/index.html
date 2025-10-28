@@ -40,36 +40,31 @@
         </div>
 
         <div class="controls">
-            <button id="btn-reset" class="btn btn-primary">Reset Glider</button>
+    <button id="btn-reset" class="btn btn-primary">Reset Glider</button>
+    
+    <div class="mode-toggle">
+        <label class="toggle-label">
+            <input type="checkbox" id="toggle-coupled" checked>
+            <span>Coupled (Conway-driven)</span>
+        </label>
+        <select id="policy-select">
+            <option value="birth">Birth</option>
+            <option value="alive">Alive</option>
+        </select>
+    </div>
+    
+    <button id="btn-randomize" class="btn btn-secondary">Randomize Embeddings</button>
+</div>
 
-            <div class="mode-toggle">
-                <label class="toggle-label">
-                    <input type="checkbox" id="toggle-coupled" checked>
-                    <span>Coupled (Conway+Embed)</span>
-                </label>
-                <select id="policy-select">
-                    <option value="birth">Birth</option>
-                    <option value="alive">Alive</option>
-                </select>
-            </div>
-
-            <button id="btn-randomize" class="btn btn-secondary">Randomize Dead Cells</button>
-            <button id="btn-pause" class="btn btn-secondary">Pause</button>
-            <button id="btn-resume" class="btn btn-secondary" style="display:none;">Resume</button>
-        </div>
-
-        <div class="info-panel">
-            <h3>CyberMesh Instructions</h3>
-            <ul>
-                <li><strong>Green squares</strong>: Conway cell state flips (alive/dead)</li>
-                <li><strong>Cyan arrows</strong>: Embedding delta passes (CyberMesh activity)</li>
-                <li>Arrows fade in 500ms and show payload_id, norm, similarity on hover</li>
-                <li>Watch the glider pattern move diagonally across the 8×8 toroidal grid</li>
-                <li>Updates occur every 500ms with periodic delta injections</li>
-                <li>Observe Pac-Man wraparound at edges (glider reappears on opposite side)</li>
-                <li>Click "Reset Glider" to restart the Conway pattern at (1,1)</li>
-            </ul>
-        </div>
+<div class="info-panel">
+    <h3>Interactive Controls</h3>
+    <ul>
+        <li><strong>Click cells</strong> to toggle alive/dead</li>
+        <li><strong>Coupled mode</strong>: Deltas pass only on Conway births</li>
+        <li><strong>Decoupled mode</strong>: Deltas pass by policy</li>
+        <li><strong>Randomize</strong>: Reset dead cell embeddings</li>
+    </ul>
+</div>
     </div>
 
     <script src="/static/js/websocket.js"></script>

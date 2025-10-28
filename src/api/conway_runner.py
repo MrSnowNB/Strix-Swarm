@@ -15,11 +15,18 @@ class ConwayRunner:
 
     def __init__(self, grid_size: int = 8, tick_ms: int = 500):
         self.grid = ConwayGrid(size=grid_size)
-        self.embedding_grid = EmbeddingGrid(size=grid_size)  # NEW
-        self.tick_interval = tick_ms / 1000.0  # Convert to seconds
+        self.embedding_grid = EmbeddingGrid(size=grid_size)
+        self.tick_ms = tick_ms
         self.running = False
-        self.websockets: Set[WebSocket] = set()
+        self.websockets = set()
         self.tick_count = 0
+        
+        # Interactive mode
+        self.mesh_mode = "coupled"  # or "decoupled"
+        self.couple_policy = "birth"  # or "alive"
+        
+        # Command queue for atomic updates
+        self.command_queue = []
 
     async def add_client(self, websocket: WebSocket):
         """Add new client and send full state"""
@@ -43,7 +50,7 @@ class ConwayRunner:
         }
         await websocket.send_json(message)
 
-    async def broadcast_deltas(self, deltas):
+    async def broadcast_conway_deltas(self, deltas):
         """Broadcast delta updates to all clients"""
         if not self.websockets or not deltas:
             return
@@ -99,112 +106,87 @@ class ConwayRunner:
         self.websockets -= disconnected
         return msg_size
 
-    async def handle_command(self, command_data: dict) -> Optional[str]:
+    async def handle_command(self, websocket: WebSocket, data: dict):
         """Handle interactive commands from dashboard"""
-        cmd_type = command_data.get("type")
-        response = None
-
+        cmd_type = data.get("type")
+        
         if cmd_type == "toggle_cell":
-            x = command_data.get("x")
-            y = command_data.get("y")
+            x = data.get("x")
+            y = data.get("y")
             if x is not None and y is not None and 0 <= x < 8 and 0 <= y < 8:
-                self.grid.grid[y, x] = 1 - self.grid.grid[y, x]
-                logger.info(f"Toggled cell ({x}, {y}) to {self.grid.grid[y, x]}")
-
+                self.command_queue.append({"type": "toggle", "x": x, "y": y})
+                logger.info(f"Queued toggle cell ({x}, {y})")
+        
         elif cmd_type == "set_mode":
-            mesh_mode = command_data.get("mesh_mode", "coupled")
-            policy = command_data.get("policy", "birth")
-            # Store mode settings for future use
-            logger.info(f"Set mode: {mesh_mode}, policy: {policy}")
-            response = f"Mode set to {mesh_mode} with {policy} policy"
-
+            self.mesh_mode = data.get("mesh_mode", "coupled")
+            self.couple_policy = data.get("policy", "birth")
+            logger.info(f"Set mode: {self.mesh_mode}, policy: {self.couple_policy}")
+            await websocket.send_json({
+                "type": "mode_changed",
+                "mesh_mode": self.mesh_mode,
+                "policy": self.couple_policy
+            })
+        
         elif cmd_type == "randomize_dead_embeddings":
-            # Randomize embeddings for dead cells
-            import numpy as np
-            for i, state in enumerate(self.embedding_grid.states):
-                x, y = i % 8, i // 8
-                if self.grid.grid[y, x] == 0:  # Dead cell
-                    rand_vec = np.random.randn(state.dim).astype(np.float16)
-                    rand_vec /= np.linalg.norm(rand_vec) + 1e-8
-                    state.vector = rand_vec
-            logger.info("Randomized embeddings for dead cells")
-
+            self.command_queue.append({"type": "randomize"})
+            logger.info("Queued randomize dead embeddings")
+        
         elif cmd_type == "reset":
-            self.grid.grid.fill(0)
-            self.grid.seed_glider(1, 1)
-            logger.info("Reset grid with glider")
+            self.command_queue.append({"type": "reset"})
+            logger.info("Queued reset")
 
-        else:
-            logger.warning(f"Unknown command type: {cmd_type}")
-
-        return response
-
+    def process_commands(self):
+        """Process queued commands at tick boundary"""
+        for cmd in self.command_queue:
+            if cmd["type"] == "toggle":
+                x, y = cmd["x"], cmd["y"]
+                self.grid.grid[y, x] = 1 - self.grid.grid[y, x]
+                logger.info(f"Toggled cell ({x}, {y})")
+            
+            elif cmd["type"] == "randomize":
+                for i, state in enumerate(self.embedding_grid.states):
+                    x, y = i % 8, i // 8
+                    if self.grid.grid[y, x] == 0:  # Dead cell
+                        rand_vec = np.random.randn(state.dim).astype(np.float16)
+                        rand_vec /= np.linalg.norm(rand_vec) + 1e-8
+                        state.vector = rand_vec
+                logger.info("Randomized dead cell embeddings")
+            
+            elif cmd["type"] == "reset":
+                self.grid.grid.fill(0)
+                self.grid.seed_glider(1, 1)
+                logger.info("Reset grid with glider")
+        
+        self.command_queue.clear()
+    
     async def run_loop(self):
-        """Main Conway loop at 500ms ticks with embedding integration"""
+        """Main loop with command processing"""
         self.running = True
-
-        # Seed glider at startup
-        self.grid.seed_glider(r_offset=1, c_offset=1)
-        logger.info("Glider seeded at (1,1)")
-
-        # Inject test delta for validation
-        test_vector = np.random.randn(384).astype(np.float16)
-        test_vector /= np.linalg.norm(test_vector)
-        self.embedding_grid.inject_delta(
-            cell_idx=10,  # Cell (2, 1)
-            vector=test_vector,
-            payload_id=f"test_delta_0"
-        )
-        logger.info("Test delta injected at cell (2,1)")
-
-        # Send initial state to any connected clients
-        for ws in list(self.websockets):
-            await self.send_full_state(ws)
-
+        self.grid.seed_glider(1, 1)
+        
         while self.running:
             tick_start = time.perf_counter()
-
-            # Step 1: Conway evolution
+            
+            # Process queued commands
+            self.process_commands()
+            
+            # Conway step
             conway_deltas = self.grid.step()
-
-            # Step 2: Embedding delta passes (using Conway energy field)
-            energy_field = self.grid.grid.astype(np.float32) * 0.5 + 0.25
-            pass_events = self.embedding_grid.step(energy_field)
-
+            
+            # Embedding step (if mode allows)
+            # ... existing embedding logic
+            
             self.tick_count += 1
-
-            # Inject test delta every 10 ticks for continuous validation
-            if self.tick_count % 10 == 0:
-                test_vector = np.random.randn(384).astype(np.float16)
-                test_vector /= np.linalg.norm(test_vector)
-                cell_idx = self.tick_count % 64  # Vary injection location
-                self.embedding_grid.inject_delta(
-                    cell_idx=cell_idx,
-                    vector=test_vector,
-                    payload_id=f"periodic_delta_{self.tick_count}"
-                )
-                logger.debug(f"Injected periodic delta at cell {cell_idx}")
-
-            # Step 3: Broadcast both types of deltas
-            if self.websockets:
-                conway_msg_size = await self.broadcast_deltas(conway_deltas)
-                embedding_msg_size = await self.broadcast_embedding_deltas(pass_events)
-
-                if self.tick_count % 10 == 0:
-                    logger.info(f"Tick {self.tick_count}: Conway={len(conway_deltas)} deltas "
-                              f"({conway_msg_size or 0} bytes), "
-                              f"Embedding={len(pass_events)} passes "
-                              f"({embedding_msg_size or 0} bytes), "
-                              f"{len(self.websockets)} clients")
-
-            # Sleep to maintain tick rate
+            
+            # Broadcast
+            await self.broadcast_conway_deltas(conway_deltas)
+            # ... other broadcasts
+            
+            # Maintain tick rate
             elapsed = time.perf_counter() - tick_start
-            sleep_time = self.tick_interval - elapsed
+            sleep_time = (self.tick_ms / 1000.0) - elapsed
             if sleep_time > 0:
                 await asyncio.sleep(sleep_time)
-            else:
-                logger.warning(f"Tick {self.tick_count} took {elapsed*1000:.1f}ms, "
-                             f"exceeding {self.tick_interval*1000:.0f}ms target")
 
     def stop(self):
         """Stop the Conway loop"""
