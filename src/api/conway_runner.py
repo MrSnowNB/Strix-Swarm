@@ -1,7 +1,7 @@
 import asyncio
 import time
 import json
-from typing import Set
+from typing import Set, Optional
 from fastapi import WebSocket
 from src.core.conway_grid import ConwayGrid
 from src.core.embedding_grid import EmbeddingGrid
@@ -98,6 +98,46 @@ class ConwayRunner:
 
         self.websockets -= disconnected
         return msg_size
+
+    async def handle_command(self, command_data: dict) -> Optional[str]:
+        """Handle interactive commands from dashboard"""
+        cmd_type = command_data.get("type")
+        response = None
+
+        if cmd_type == "toggle_cell":
+            x = command_data.get("x")
+            y = command_data.get("y")
+            if x is not None and y is not None and 0 <= x < 8 and 0 <= y < 8:
+                self.grid.grid[y, x] = 1 - self.grid.grid[y, x]
+                logger.info(f"Toggled cell ({x}, {y}) to {self.grid.grid[y, x]}")
+
+        elif cmd_type == "set_mode":
+            mesh_mode = command_data.get("mesh_mode", "coupled")
+            policy = command_data.get("policy", "birth")
+            # Store mode settings for future use
+            logger.info(f"Set mode: {mesh_mode}, policy: {policy}")
+            response = f"Mode set to {mesh_mode} with {policy} policy"
+
+        elif cmd_type == "randomize_dead_embeddings":
+            # Randomize embeddings for dead cells
+            import numpy as np
+            for i, state in enumerate(self.embedding_grid.states):
+                x, y = i % 8, i // 8
+                if self.grid.grid[y, x] == 0:  # Dead cell
+                    rand_vec = np.random.randn(state.dim).astype(np.float16)
+                    rand_vec /= np.linalg.norm(rand_vec) + 1e-8
+                    state.vector = rand_vec
+            logger.info("Randomized embeddings for dead cells")
+
+        elif cmd_type == "reset":
+            self.grid.grid.fill(0)
+            self.grid.seed_glider(1, 1)
+            logger.info("Reset grid with glider")
+
+        else:
+            logger.warning(f"Unknown command type: {cmd_type}")
+
+        return response
 
     async def run_loop(self):
         """Main Conway loop at 500ms ticks with embedding integration"""

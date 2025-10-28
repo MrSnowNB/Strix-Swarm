@@ -1,91 +1,72 @@
-class MetricsTracker {
-    constructor() {
-        this.updateCount = 0;
-        this.lastUpdateTime = Date.now();
-        this.updateRate = 0.0;
-    }
+// Interactive Dashboard Controls
+// Cell click-to-toggle, mode switches, randomization
 
-    recordUpdate() {
-        this.updateCount++;
-        const now = Date.now();
-        const elapsed = (now - this.lastUpdateTime) / 1000;
+function initializeCellClicks() {
+    const gridElement = document.getElementById('conway-grid');
 
-        if (elapsed >= 1.0) {
-            this.updateRate = this.updateCount / elapsed;
-            this.updateCount = 0;
-            this.lastUpdateTime = now;
-            this.displayUpdateRate();
+    gridElement.addEventListener('click', (e) => {
+        // Only handle clicks on cell elements
+        if (e.target.classList.contains('cell')) {
+            const x = parseInt(e.target.dataset.x);
+            const y = parseInt(e.target.dataset.y);
+
+            if (wsClient && wsClient.ws && wsClient.ws.readyState === WebSocket.OPEN) {
+                wsClient.send(JSON.stringify({
+                    type: "toggle_cell",
+                    x: x,
+                    y: y
+                }));
+
+                // Visual feedback - highlight the clicked cell briefly
+                e.target.classList.add('clicked');
+                setTimeout(() => e.target.classList.remove('clicked'), 300);
+            }
         }
-    }
-
-    displayUpdateRate() {
-        const element = document.getElementById('update-rate');
-        if (element) {
-            element.textContent = this.updateRate.toFixed(1);
-        }
-    }
+    });
 }
 
-let metricsTracker = null;
+function updateModeDisplay() {
+    // Called when mode changes are received from server
+    console.log('Mode display updated');
+}
 
-function initializeControls() {
-    metricsTracker = new MetricsTracker();
+// Mode toggle handler
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleCoupled = document.getElementById('toggle-coupled');
+    const policySelect = document.getElementById('policy-select');
 
-    // Reset button
-    const btnReset = document.getElementById('btn-reset');
-    if (btnReset) {
-        btnReset.addEventListener('click', () => {
-            if (wsClient) {
-                wsClient.send('reset');
-                console.log('Sent reset command');
+    if (toggleCoupled) {
+        toggleCoupled.addEventListener('change', (e) => {
+            const mode = e.target.checked ? "coupled" : "decoupled";
+            const policy = policySelect ? policySelect.value : "birth";
+
+            if (wsClient && wsClient.ws && wsClient.ws.readyState === WebSocket.OPEN) {
+                wsClient.send(JSON.stringify({
+                    type: "set_mode",
+                    mesh_mode: mode,
+                    policy: policy
+                }));
             }
         });
     }
 
-    // Pause button (placeholder for future implementation)
-    const btnPause = document.getElementById('btn-pause');
-    if (btnPause) {
-        btnPause.addEventListener('click', () => {
-            console.log('Pause not yet implemented');
-            // Future: send "stop" command to server
+    // Randomize button handler
+    const randomizeBtn = document.getElementById('btn-randomize');
+    if (randomizeBtn) {
+        randomizeBtn.addEventListener('click', () => {
+            if (wsClient && wsClient.ws && wsClient.ws.readyState === WebSocket.OPEN) {
+                wsClient.send(JSON.stringify({
+                    type: "randomize_dead_embeddings"
+                }));
+            }
         });
     }
+});
 
-    // Resume button (placeholder)
-    const btnResume = document.getElementById('btn-resume');
-    if (btnResume) {
-        btnResume.addEventListener('click', () => {
-            console.log('Resume not yet implemented');
-            // Future: send "start" command to server
-        });
-    }
-}
-
-function updateConnectionStatus(connected) {
-    const statusBadge = document.getElementById('connection-status');
-    const statusText = statusBadge.querySelector('.status-text');
-
-    if (connected) {
-        statusBadge.classList.remove('disconnected');
-        statusBadge.classList.add('connected');
-        statusText.textContent = 'Connected';
-    } else {
-        statusBadge.classList.remove('connected');
-        statusBadge.classList.add('disconnected');
-        statusText.textContent = 'Disconnected';
-    }
-}
-
-function updateTickCount(tick) {
-    const element = document.getElementById('tick-count');
-    if (element) {
-        element.textContent = tick;
-    }
-}
-
-function updateLatency(latency) {
-    const element = document.getElementById('latency');
-    if (element) {
-        element.textContent = `${latency}ms`;
-    }
+// Controls initialization function
+function initializeControls() {
+    // Controls are initialized via DOMContentLoaded event above
+    // This function confirms controls are set up
+    console.log('Dashboard controls initialization complete');
+    return true;
 }

@@ -42,7 +42,7 @@ class ConwayGrid:
 
                 # Track changes for delta
                 if new_grid[r, c] != current:
-                    delta.append({'x': r, 'y': c, 'alive': int(new_grid[r, c])})
+                    delta.append({'x': c, 'y': r, 'alive': int(new_grid[r, c])})
 
         self.grid = new_grid
         self.delta = delta

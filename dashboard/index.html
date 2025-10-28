@@ -41,6 +41,19 @@
 
         <div class="controls">
             <button id="btn-reset" class="btn btn-primary">Reset Glider</button>
+
+            <div class="mode-toggle">
+                <label class="toggle-label">
+                    <input type="checkbox" id="toggle-coupled" checked>
+                    <span>Coupled (Conway+Embed)</span>
+                </label>
+                <select id="policy-select">
+                    <option value="birth">Birth</option>
+                    <option value="alive">Alive</option>
+                </select>
+            </div>
+
+            <button id="btn-randomize" class="btn btn-secondary">Randomize Dead Cells</button>
             <button id="btn-pause" class="btn btn-secondary">Pause</button>
             <button id="btn-resume" class="btn btn-secondary" style="display:none;">Resume</button>
         </div>
@@ -61,6 +74,7 @@
 
     <script src="/static/js/websocket.js"></script>
     <script src="/static/js/overlay.js"></script>
+    <script src="/static/js/utils.js"></script>
     <script src="/static/js/grid.js"></script>
     <script src="/static/js/controls.js"></script>
     <script src="/static/js/main.js"></script>

@@ -14,6 +14,10 @@ window.addEventListener('DOMContentLoaded', () => {
     const overlay = initializeOverlay();
     console.log('Embedding overlay initialized');
 
+    // Initialize interactive cell controls
+    initializeCellClicks();
+    console.log('Cell click controls initialized');
+
     // Initialize WebSocket
     const ws = initializeWebSocket();
     console.log('WebSocket connecting...');
