@@ -4,6 +4,8 @@ import json
 from typing import Set
 from fastapi import WebSocket
 from src.core.conway_grid import ConwayGrid
+from src.core.embedding_grid import EmbeddingGrid
+import numpy as np
 import logging
 
 logger = logging.getLogger(__name__)
@@ -13,6 +15,7 @@ class ConwayRunner:
 
     def __init__(self, grid_size: int = 8, tick_ms: int = 500):
         self.grid = ConwayGrid(size=grid_size)
+        self.embedding_grid = EmbeddingGrid(size=grid_size)  # NEW
         self.tick_interval = tick_ms / 1000.0  # Convert to seconds
         self.running = False
         self.websockets: Set[WebSocket] = set()
@@ -68,13 +71,51 @@ class ConwayRunner:
 
         return msg_size
 
+    async def broadcast_embedding_deltas(self, pass_events):
+        """Broadcast embedding pass events to all clients"""
+        if not self.websockets or not pass_events:
+            return
+
+        message = {
+            "type": "embedding_deltas",
+            "tick": self.tick_count,
+            "edges": [event.to_dict() for event in pass_events]
+        }
+
+        # Check message size
+        msg_size = len(json.dumps(message))
+        if msg_size > 1024:
+            logger.warning(f"Embedding delta message {msg_size} bytes exceeds 1KB")
+
+        # Broadcast
+        disconnected = set()
+        for ws in self.websockets:
+            try:
+                await ws.send_json(message)
+            except Exception as e:
+                logger.warning(f"Failed to send embedding deltas: {e}")
+                disconnected.add(ws)
+
+        self.websockets -= disconnected
+        return msg_size
+
     async def run_loop(self):
-        """Main Conway loop at 500ms ticks"""
+        """Main Conway loop at 500ms ticks with embedding integration"""
         self.running = True
 
         # Seed glider at startup
         self.grid.seed_glider(r_offset=1, c_offset=1)
         logger.info("Glider seeded at (1,1)")
+
+        # Inject test delta for validation
+        test_vector = np.random.randn(384).astype(np.float16)
+        test_vector /= np.linalg.norm(test_vector)
+        self.embedding_grid.inject_delta(
+            cell_idx=10,  # Cell (2, 1)
+            vector=test_vector,
+            payload_id=f"test_delta_0"
+        )
+        logger.info("Test delta injected at cell (2,1)")
 
         # Send initial state to any connected clients
         for ws in list(self.websockets):
@@ -83,16 +124,26 @@ class ConwayRunner:
         while self.running:
             tick_start = time.perf_counter()
 
-            # Execute Conway step
-            deltas = self.grid.step()
+            # Step 1: Conway evolution
+            conway_deltas = self.grid.step()
+
+            # Step 2: Embedding delta passes (using Conway energy field)
+            energy_field = self.grid.grid.astype(np.float32) * 0.5 + 0.25
+            pass_events = self.embedding_grid.step(energy_field)
+
             self.tick_count += 1
 
-            # Broadcast deltas if any clients connected
+            # Step 3: Broadcast both types of deltas
             if self.websockets:
-                msg_size = await self.broadcast_deltas(deltas)
+                conway_msg_size = await self.broadcast_deltas(conway_deltas)
+                embedding_msg_size = await self.broadcast_embedding_deltas(pass_events)
+
                 if self.tick_count % 10 == 0:
-                    logger.info(f"Tick {self.tick_count}: {len(deltas)} deltas, "
-                              f"{msg_size} bytes, {len(self.websockets)} clients")
+                    logger.info(f"Tick {self.tick_count}: Conway={len(conway_deltas)} deltas "
+                              f"({conway_msg_size or 0} bytes), "
+                              f"Embedding={len(pass_events)} passes "
+                              f"({embedding_msg_size or 0} bytes), "
+                              f"{len(self.websockets)} clients")
 
             # Sleep to maintain tick rate
             elapsed = time.perf_counter() - tick_start

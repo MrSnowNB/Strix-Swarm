@@ -7,6 +7,7 @@ class WebSocketClient {
         this.reconnectDelay = 2000;
         this.onStateChange = null;
         this.onDelta = null;
+        this.onEmbeddingDeltas = null;  // NEW
         this.onConnectionChange = null;
         this.lastMessageTime = Date.now();
     }
@@ -55,6 +56,10 @@ class WebSocketClient {
         } else if (message.type === 'delta') {
             if (this.onDelta) {
                 this.onDelta(message);
+            }
+        } else if (message.type === 'embedding_deltas') {  // NEW
+            if (this.onEmbeddingDeltas) {
+                this.onEmbeddingDeltas(message);
             }
         }
     }

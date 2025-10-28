@@ -10,6 +10,10 @@ window.addEventListener('DOMContentLoaded', () => {
     initializeControls();
     console.log('Controls initialized');
 
+    // Initialize embedding overlay
+    const overlay = initializeOverlay();
+    console.log('Embedding overlay initialized');
+
     // Initialize WebSocket
     const ws = initializeWebSocket();
     console.log('WebSocket connecting...');
@@ -34,6 +38,18 @@ window.addEventListener('DOMContentLoaded', () => {
         // Update latency estimate
         const latency = ws.getLatency();
         updateLatency(latency);
+    };
+
+    // NEW: Handle embedding deltas
+    ws.onEmbeddingDeltas = (message) => {
+        console.log(`Received embedding_deltas: tick=${message.tick}, ${message.edges.length} passes`);
+        for (const edge of message.edges) {
+            overlay.drawPass(
+                edge.from.x, edge.from.y,
+                edge.to.x, edge.to.y,
+                edge.payload_id, edge.norm, edge.sim
+            );
+        }
     };
 
     // Connect WebSocket
