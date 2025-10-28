@@ -1,0 +1,17 @@
+CyberMesh Data Path Validation Report
+==================================================
+Timestamp: 2025-10-28 07:28:30
+Duration: 60.4s
+Status: PASS
+
+Message Counts:
+  Conway deltas: 121
+  Embedding messages: 0
+  Total embedding edges: 0
+  Unique payloads: 0
+
+Quality Metrics:
+Avg edges/message: N/A
+  Coordinate errors: 0
+  Trajectory completeness: 0.0%
+

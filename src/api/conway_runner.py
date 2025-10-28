@@ -133,6 +133,18 @@ class ConwayRunner:
 
             self.tick_count += 1
 
+            # Inject test delta every 10 ticks for continuous validation
+            if self.tick_count % 10 == 0:
+                test_vector = np.random.randn(384).astype(np.float16)
+                test_vector /= np.linalg.norm(test_vector)
+                cell_idx = self.tick_count % 64  # Vary injection location
+                self.embedding_grid.inject_delta(
+                    cell_idx=cell_idx,
+                    vector=test_vector,
+                    payload_id=f"periodic_delta_{self.tick_count}"
+                )
+                logger.debug(f"Injected periodic delta at cell {cell_idx}")
+
             # Step 3: Broadcast both types of deltas
             if self.websockets:
                 conway_msg_size = await self.broadcast_deltas(conway_deltas)
