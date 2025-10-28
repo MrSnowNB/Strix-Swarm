@@ -51,7 +51,7 @@ python -m uvicorn api.conway_server:app --host 0.0.0.0 --port 8000
 │   Web Browser   │◄──►│ WebSocket Server│◄──►│ Conway Engine   │
 │                 │    │   (500ms ticks) │    │   (NumPy Core)  │
 │ 🖥️ Dashboard     │    │                 │    │                 │
-│ 📊 Live Metrics │    │ 🔄 Delta Updates │    │ 📐 B3/S23 Rules │
+│ 📊 Live Metrics │    │ 🔄 Delta Updates │    │ 📡 Broadcasting  │
 │ 🎮 Controls     │    │ 📡 Broadcasting  │    │ 🌀 Toroidal Wrap│
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                                                                                 ```
@@ -226,7 +226,7 @@ John Conway's cellular automaton (1970) revolutionized computer science by demon
 ### Computational Significance
 - **Parallelization Challenge**: Each generation depends on previous state
 - **Communication Complexity**: O(N) messages for N changes
-- **Synchronization Requirements**: Maintain consistent global state
+- **Synchronization Requirements**: Maintaining consistent global state
 - **Scalability Boundaries**: Network latency vs simulation speed
 
 Our Phase 1 foundation provides the experimental platform to explore these challenges at scale.
