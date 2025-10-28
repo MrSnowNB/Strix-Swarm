@@ -46,17 +46,21 @@
         </div>
 
         <div class="info-panel">
-            <h3>Instructions</h3>
+            <h3>CyberMesh Instructions</h3>
             <ul>
-                <li>Watch the glider pattern move diagonally across the grid</li>
+                <li><strong>Green squares</strong>: Conway cell state flips (alive/dead)</li>
+                <li><strong>Cyan arrows</strong>: Embedding delta passes (CyberMesh activity)</li>
+                <li>Arrows fade in 500ms and show payload_id, norm, similarity on hover</li>
+                <li>Watch the glider pattern move diagonally across the 8×8 toroidal grid</li>
+                <li>Updates occur every 500ms with periodic delta injections</li>
                 <li>Observe Pac-Man wraparound at edges (glider reappears on opposite side)</li>
-                <li>Updates occur every 500ms (2 per second)</li>
-                <li>Click "Reset Glider" to restart the pattern at (1,1)</li>
+                <li>Click "Reset Glider" to restart the Conway pattern at (1,1)</li>
             </ul>
         </div>
     </div>
 
     <script src="/static/js/websocket.js"></script>
+    <script src="/static/js/overlay.js"></script>
     <script src="/static/js/grid.js"></script>
     <script src="/static/js/controls.js"></script>
     <script src="/static/js/main.js"></script>
