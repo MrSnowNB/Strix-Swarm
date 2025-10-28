@@ -43,7 +43,7 @@ class ConwayGrid {
 
     applyDeltas(deltas) {
         deltas.forEach(delta => {
-            const wasAlive = this.cells[delta.x][delta.y].classList.contains('alive');
+            const wasAlive = this.cells[delta.y][delta.x].classList.contains('alive');
             this.setCellState(delta.x, delta.y, delta.alive);
 
             // Update live count
