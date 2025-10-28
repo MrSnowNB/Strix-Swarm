@@ -1,17 +1,24 @@
 CyberMesh Data Path Validation Report
 ==================================================
-Timestamp: 2025-10-28 07:28:30
-Duration: 60.4s
+Timestamp: 2025-10-28 07:33:06
+Duration: 60.1s
 Status: PASS
 
 Message Counts:
   Conway deltas: 121
-  Embedding messages: 0
-  Total embedding edges: 0
-  Unique payloads: 0
+  Embedding messages: 12
+  Total embedding edges: 12
+  Unique payloads: 12
 
 Quality Metrics:
-Avg edges/message: N/A
+Avg edges/message: 1.00
   Coordinate errors: 0
-  Trajectory completeness: 0.0%
+  Trajectory completeness: 100.0%
 
+Sample Edges:
+  1. {'tick': 80, 'from': {'x': 0, 'y': 2}, 'to': {'x': 1, 'y': 2}, 'payload_id': 'periodic_delta_80', 'norm': 0.9995, 'sim': 0.0078}
+  2. {'tick': 90, 'from': {'x': 2, 'y': 3}, 'to': {'x': 1, 'y': 2}, 'payload_id': 'periodic_delta_90', 'norm': 1.0, 'sim': -0.0135}
+  3. {'tick': 100, 'from': {'x': 4, 'y': 4}, 'to': {'x': 3, 'y': 4}, 'payload_id': 'periodic_delta_100', 'norm': 1.0, 'sim': 0.0}
+  4. {'tick': 110, 'from': {'x': 6, 'y': 5}, 'to': {'x': 5, 'y': 5}, 'payload_id': 'periodic_delta_110', 'norm': 0.9995, 'sim': 0.0}
+  5. {'tick': 120, 'from': {'x': 0, 'y': 7}, 'to': {'x': 1, 'y': 0}, 'payload_id': 'periodic_delta_120', 'norm': 1.0, 'sim': 0.0029}
+  ... (7 more)
