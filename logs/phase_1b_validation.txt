@@ -1,0 +1,12 @@
+Phase 1B Network Validation
+==================================================
+Hardware: 128GB Strix Halo HP ZBook, Windows 11
+==================================================
+
+Messages: 61
+Duration: 30.5s
+Msg/sec: 2.0
+Avg Size: 133 bytes
+Max Size: 133 bytes
+Avg Latency: 499.2ms
+Max Latency: 521.1ms

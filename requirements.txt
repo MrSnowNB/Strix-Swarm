@@ -1,0 +1,20 @@
+# Core dependencies
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+websockets>=11.0.0
+numpy>=1.24.0
+
+# Development & Testing
+pytest>=7.0.0
+pytest-html>=3.1.0
+ruff>=0.1.0
+mypy>=1.0.0
+
+# Hardware monitoring (for validation scripts)
+psutil>=5.9.0
+
+# Optional but recommended
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+black>=23.0.0
+isort>=5.12.0

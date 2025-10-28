@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberMesh Conway Glider Demo - 8×8 Grid</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CyberMesh Conway Glider Demo</h1>
+            <div class="status-badge" id="connection-status">
+                <span class="status-dot"></span>
+                <span class="status-text">Disconnected</span>
+            </div>
+        </header>
+
+        <div class="metrics-panel">
+            <div class="metric-card">
+                <div class="metric-label">Tick</div>
+                <div class="metric-value" id="tick-count">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Live Cells</div>
+                <div class="metric-value" id="live-cells">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Updates/sec</div>
+                <div class="metric-value" id="update-rate">0.0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Latency</div>
+                <div class="metric-value" id="latency">0ms</div>
+            </div>
+        </div>
+
+        <div class="grid-wrapper">
+            <div id="conway-grid" class="conway-grid"></div>
+        </div>
+
+        <div class="controls">
+            <button id="btn-reset" class="btn btn-primary">Reset Glider</button>
+            <button id="btn-pause" class="btn btn-secondary">Pause</button>
+            <button id="btn-resume" class="btn btn-secondary" style="display:none;">Resume</button>
+        </div>
+
+        <div class="info-panel">
+            <h3>Instructions</h3>
+            <ul>
+                <li>Watch the glider pattern move diagonally across the grid</li>
+                <li>Observe Pac-Man wraparound at edges (glider reappears on opposite side)</li>
+                <li>Updates occur every 500ms (2 per second)</li>
+                <li>Click "Reset Glider" to restart the pattern at (1,1)</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="/static/js/websocket.js"></script>
+    <script src="/static/js/grid.js"></script>
+    <script src="/static/js/controls.js"></script>
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
